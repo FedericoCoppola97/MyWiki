@@ -1,0 +1,25 @@
+********* Cambiare Time Zone Debian ********
+
+E' possibile che la Time Zone sia errata sulla macchina Linux.
+
+Si può verificare digitando "date"
+
+
+Un possibile output può essere il seguente:
+
+    # date
+    # Fri Nov  15 10:31:13 CST 2019
+
+Per cambiare la time zone da CLI su Debian/Ubuntu (esempio passare da CST a CET):
+
+1) autenticarsi come root (digitando su oppure sudo -s)
+
+    sudo -s
+
+2) Copiare file di configurazione “Europe/Rome” nella folder “Localtime”
+
+    cp /usr/share/zoneinfo/Europe/Rome /etc/localtime
+
+3) Digitando nuovamente il comando "date" ora l'output indica la nuova TimeZone
+
+Fine!
