@@ -1,0 +1,50 @@
+
+
+LVM (Logical Volume Manager) permette di creare un livello di astrazione sopra dispositivo di storage fisico, quindi possiamo creare Logical Volume (LVM).
+La configurazione dello storage è astratta e separata dal livello fisico.
+La configurazione dei dischi è nascosta dallo strato di virtualizzazione di LVM
+
+LVM suddivide lo storage in:
+
+    Physical volume (dischi fisici installati sul PC/Server)
+     Volume group (insieme di più dischi o un solo disco associato)
+    Logical Volume (volume o partizione con File System come Ext4)
+
+Il volume group viene visto come dispositivo fisico anche se non lo è.
+
+Vantaggio:
+
+    Facilità di espandere/restringere volumi in modo trasparente per le APP.
+    Ad esempio posso aggiungere un disco fisico, ed integrarlo nel Volume Group, così espando storage
+    Incrementare velocità con striping (RAID 0)
+    Supporta snapshot anche a caldo per backup
+
+Creazione Physical Volumes, Volume Groups, Logical Volumes
+
+N.B. Operare come utente ROOT. Se necessario, potrebbe essere necessario eseguire WIPE disco: wipefs -a /dev/sdXXX
+
+Il disco che vogliamo aggiungere, potrebbe essere già formattato con una partizione.
+Si può avviare la procedura di formattazione tramite "fdisk /dev/sdXXX" > tasto "n" > confermare più volte tramite tasto "Invio" > tasto "w" per applicare modifica
+
+1) Se abbiamo un nuovo disco, dobbiamo inserirlo nella gestione di LVM
+
+pvcreate /dev/sdXXX→ ad esempio pvcreate /dev/sdXXX [Indico il disco fisico oppure anche partizione del disco fisico]
+pvscan (oppure pvs) → mostra i dischi fisici presenti in LVM
+pvdisplay /dev/sdXXX → permette di vedere i dettagli specifici del disco indicato
+
+2) Successivamente, se necessario dobbiamo creare un nuovo Volume Group.
+All'interno del volume group possiamo inserire un singolo disco oppure molteplici dischi.
+
+vgcreate NOME_VG /dev/sdXXX /dev/sdYYY → creazione del volume group con molteplici dischi. Specificando un solo disco si crea con un solo HDD
+vgscan (oppure vgs) → mostra i volumi disponibili in LVM
+
+3) Creazione del volume logico (partizione)
+
+lvcreate --size XXXGB --name NOME_LOGIC_VOLUME NOME_VIRTUAL_GROUP
+lvcreate -n NOME_LOGIC_VOLUME -l 100%FREE NOME_VIRTUAL_GROUP  [-l 100%FREE = usare tutto lo spazio libero, oppure -l 10G = volume di 10Giga...]
+lvscan (oppure lvs)  → elenco dei volumi logici
+
+4) Formattazione del volume logico [NON NECESSARIO SE DISCO GIA' FORMATTATO IN ORIGINE]
+mkfs.ext4 /dev/NOME_VIRTUAL_GROUP/NOME_LOGIC_VOLUME
+
+Verificare struttura dischi/partizioni/volumi tramite "lsblk"
