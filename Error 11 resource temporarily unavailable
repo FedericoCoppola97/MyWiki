@@ -1,0 +1,16 @@
+********** Error 11 resource temporarily unavailable *********
+
+Utilizzando il gestore pacchetti apt su Debian e Ubuntu si può riscontrare
+
+il seguente errore:
+
+    Could not get lock /var/lib/dpkg/lock - open (11 Resource temporarily unavailable)
+
+Per risolvere tale errore è necessario eliminare due file:
+
+    sudo rm /var/cache/apt/archives/lock
+    sudo rm /var/lib/dpkg/lock
+
+Eliminati i due file, sarà nuovamente possibile installare,aggiornare e rimuovere i pacchetti
+
+Fine!
