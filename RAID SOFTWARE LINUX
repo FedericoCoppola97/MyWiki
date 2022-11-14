@@ -1,0 +1,55 @@
+RAID SOFTWARE LINUX
+
+Prima di procedere con la configurazione del RAID software su Debian/Ubuntu è necessario avere:
+
+    Hard Disk installati
+    Pacchetto software “mdadm” installato
+
+Al fine di creare il RAID è necessario prima formattare i dischi, ad esempio utilizzando il tool “fdisk”
+
+    fdisk /dev/sdXXX
+
+    n --> nuova partizione
+
+    p --> primaria
+
+    1 --> partizione numero
+
+    w --> salva modifiche
+
+    (premere invio per confermare altri valori di default!)
+
+
+Creazione RAID 5
+
+Nel caso in cui abbiamo 3 o più dischi è possibile configurare RAID 5 (tolleranza al guasto di 1 solo HDD).
+
+    mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sda1 /dev/sdb1 /dev/sdc1
+
+
+Monitorare processo di creazione RAID
+
+E' possibile monitorare processo di creazione del RAID tramite terminale.
+
+    cat /proc/mdstat
+
+Nel caso in cui si voglia visualizzare il progresso via CLI costantemente digitare (sostituire il valore XX con il numero di secondi)
+
+    watch -nXX cat /proc/mdstat 
+
+
+Rimozione disco da array RAID
+
+In questo esempio si vuole rimuovere il disco SDC1 dal RAID 5 in quanto guasto.
+E' quindi necessario prima specificare che il disco “/dev/sdc1” è fault e successivamnte rimuoverlo dal RAID.
+A questo punto sarà possibile rimuovere il disco fisicamente del calcolatore.
+
+    mdadm /dev/md1 --fail /dev/sdc1
+
+    mdadm /dev/md1 --remove /dev/sdc1
+
+Infine è fortemente consigliato pulire metadata RAID da dischi non più presente nel RAID array:
+
+    wipefs -a /dev/sdXXX
+
+Sostituire i valori XXX con il ID del disco di nostro interesse, ad esempio /dev/sdc1
