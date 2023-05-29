@@ -1,0 +1,11 @@
+############################################ FIX DISK MAPPING REGEDIT #################################
+
+Follow these steps if you are facing trouble about Windows "Disk Mapping"
+
+1) Open REGEDIT
+2) FULL Dump Regedit (backup)
+3) Open path "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ Explorer\MountPoints2\"
+4) Delete all record concerning network resources (disk mapping)
+5) Reboot your laptop
+
+See you soon!
