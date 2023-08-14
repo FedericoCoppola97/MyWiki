@@ -1,0 +1,111 @@
+****************** HOW TO MIGRATE NEXTCLOUD DEPLOYMENT TO NEW SERVER *****************************
+
+!!! ATTENTION !!!
+Have access to old Linux server with NextCloud and new Linux server.
+The new Linux server must have LAMP (Apache, MySQL, PHP). 
+Do not download/install NextCloud in Apache2, only create database on MySQL and user.
+It is suggested to configure MySQL DB and local user on MySQL DB as on the previous Linux server (same DB name, same username and password).
+Finally, both servers must be able to communicate with each other via SSH protocol (TCP 22).
+	
+
+=================================================== SERVER OLD ===================================================
+
+1)Enable "maintenance mode" on server old
+cd /var/www/html/nextcloud   ==>   [path where NEXTCLOUD app, it should be different in your deployment!]
+sudo -u www-data php occ maintenance:mode --on  ==> Enable maintenance mode using "www-data" user (owner user of NEXTCLOUD folders and files)
+
+2) NextCloud MySQL dump
+mysqldump --user=nextcloud_user --password=nextcloud_user_psw --databases=nextcloud_db > dump_nextcloud_db.sql
+
+3) NextCloud app backup
+cd /var/www/html => In this path "nextcloud" subfolder is located [this scenario should be different in your deployment]
+tar -czvf nextcloud-server.tar.gz ./nextcloud ==> Generate .tar.gz file 
+
+
+4.1) NextCloud user data backup [METHOD 1, IF YOU CAN NOT FOLLOW THIS STEP PLEASE GO TO 4.2]
+Nel caso in cui il volume dei dati è un disco separato (visicamente oppure virtual disk dedicato) si suggerisce di clonarlo e collegarlo al nuovo server
+
+
+4.2) NextCloud user data backup [METHOD 2, PLEASE GO FUTHER IF YOU FOLLOWED STEP NUMBER 4.1 BEFORE]
+Nel caso in cui è necessario copiare il contenuto dei dati presenti nel path "data" si suggerisce di comprire tutti i dati in file ".tar.gz"
+Il file compresso conserva i permessi dei file/folder una volta migrati su nuovo server NextCloud.
+
+cd /path/nc_data ==> Il path dei dati è individuabile tramite il file "/nextcloud_path/config/config.php"
+tar -czvf nextcloud-data.tar.gz ./nc_data  ==> Creazione file compresso .tar.gz
+
+
+5) Take note of upload variables of PHP.ini file 
+
+cat /etc/php/XX/apache2/php.ini [XX is PHP release running] ==> for example: /etc/php/8.1/apache2/php.ini
+
+upload_max_filesize = xxxxM
+max_file_uploads = xxx
+
+
+6) Copy MySQL dump. data, Apache2 VirtualHosts, SSL certificates on new server from old one
+scp -P 22 /path/dump_nextcloud_db.sql root@IP_NEW_SERVER:/var/www/html ==> Change "path" with your real path
+scp -P 22 /path/nextcloud-data.tar.gz root@IP_NEW_SERVER:/var/www/html ==> [FOLLOW THIS STEP ONLY IN CASE YOUR APPLIED STEP 4.2 BEFORE] Change "path" with your real path
+scp -P 22 -rp /path/certificate root@IP_NEW_SERVER:/path/certificate  ==> If necessary create "/path/certificate" directory on new server. You can know path via SSL virtualhost file
+scp -P 22 -rp /etc/apache2/sites-available root@IP_NEW_SERVER:/etc/apache2/sites-available
+
+
+=================================================== SERVER NEW ===================================================
+
+1) Restore MySQL Dump [MySQL nextcloud db must be exist before restore dump!]
+mysql -u nextcloud_user -p nextcloud_db < dump_nextcloud_db.sql  ==> Type MySQL nextcloud_user password
+
+2) Edit PHP.ini file 
+Apply PHP upload settings taken note before
+
+3) Restore NEXTCLOUD app
+cd /var/www/html
+tar xvf nextcloud-server.tar.gz
+
+Check if NextCloud installation is located in the same path as old server!
+
+
+4) Data partition
+If necessary edit "/etc/fstab" to mount "data partition/data disk" as before!
+"sudo blkid" can help you to identify disk UUID to add in "/etc/fstab"
+
+Old server "/etc/fstab" must be equal to "/etc/fstab" of new server!
+
+cd /path_data
+tar xvf nextcloud-data.tar.gz
+
+Check if NextCloud data is located in the same path as old server!
+
+
+5) Enable nextcloud virtualhost
+a2ensite /etc/apache2/sites-available/nextcloud.conf 
+a2disite /etc/apache2/sites-enabled/000-default.conf ==> default HTTP virtual host
+a2disite /etc/apache2/sites-enabled/default_ssl.conf ==> default HTTPS virtual host
+
+6) Edit NEXTCLOUD config.php
+
+nano /var/www/html/nextcloud/config/config.php
+
+'trusted_domains' =>
+  array (
+    0 => 'X.X.X.X',  ==> IP NEW SERVER
+    1 => 'cloud.mycompany.com',
+  ),
+
+
+6) Edit DNS record if necessary for example edit "cloud.mycompany.com <==> NEW_NEXTCLOUD_SERVER_IP"
+
+7) Disable maintenance mode
+cd /var/www/html/nextcloud   ==>   [path where NEXTCLOUD app, it should be different in your deployment!]
+sudo -u www-data php occ maintenance:mode --off ==> Disable maintenance mode using "www-data" user (owner user of NEXTCLOUD folders and files)
+
+8)Reboot new server and try!
+
+
+
+>>> IN CASE OF ERROR AFTER MIGRATION TO NEW SERVER <<<<<
+1) check if Apache2 and MySQL are running
+2) Check via netstat -an if port 443, 3306 are open
+3) Check credential to access to nextcloud_db
+4) Compare list of PHP modules installed on the new and old server (use command "php -m")
+5) Check file permissions ==> chown www-data:www-data -R /path/nextcloud_data/
+6) Check all file path
